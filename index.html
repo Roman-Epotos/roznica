@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>РОЗНИЦА — Кабинет v2.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root{--bg:#0d0f14;--surf:#141720;--surf2:#1c2030;--bdr:#252a3a;--acc:#e8ff47;--acc2:#47b4ff;--err:#ff4f4f;--warn:#ffb347;--ok:#47ff8f;--txt:#e2e8f0;--muted:#6b7394}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'IBM Plex Sans',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(232,255,71,.025)1px,transparent 1px),linear-gradient(90deg,rgba(232,255,71,.025)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 24px 60px}
+header{padding:26px 0 0;border-bottom:1px solid var(--bdr);margin-bottom:22px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:4px;line-height:1;color:var(--acc);text-shadow:0 0 28px rgba(232,255,71,.25)}
+.sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.hright{margin-left:auto;display:flex;align-items:center;gap:8px}
+.gpill{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:4px 10px;border-radius:2px;border:1px solid var(--bdr);color:var(--muted);letter-spacing:1px;white-space:nowrap}
+.gpill.ok{border-color:var(--ok);color:var(--ok)}.gpill.run{border-color:var(--acc2);color:var(--acc2)}.gpill.warn{border-color:var(--warn);color:var(--warn)}
+.tabs{display:flex;gap:0;margin-top:16px;width:100%}
+.tab-btn{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;padding:10px 20px;border:1px solid var(--bdr);border-bottom:none;border-radius:6px 6px 0 0;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s;text-transform:uppercase;font-weight:600;position:relative;bottom:-1px}
+.tab-btn:hover{color:var(--txt);background:var(--surf)}
+.tab-btn.active{background:var(--bg);color:var(--acc);border-color:var(--bdr);border-bottom:1px solid var(--bg)}
+.tab-content{display:none}.tab-content.active{display:block}
+.gbar{background:var(--surf);border:1px solid var(--bdr);border-radius:6px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.gbar-ico{font-size:22px}.gbar-info{flex:1;min-width:120px}
+.gbar-title{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--txt);font-weight:500}
+.gbar-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px}.gbar-sub.ok{color:var(--ok)}
+.btn-gauth{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;padding:8px 16px;border:none;border-radius:3px;cursor:pointer;text-transform:uppercase;font-weight:700;flex-shrink:0;transition:all .15s}
+.btn-gauth.connect{background:#4285f4;color:#fff}.btn-gauth.connect:hover{background:#5a95f5}
+.btn-gauth.disconnect{background:transparent;color:var(--muted);border:1px solid var(--bdr)}.btn-gauth.disconnect:hover{color:var(--err);border-color:var(--err)}
+.sheet-bar{background:rgba(71,255,143,.05);border:1px solid rgba(71,255,143,.2);border-radius:6px;padding:10px 16px;margin-bottom:14px;display:none;align-items:center;gap:12px;flex-wrap:wrap}
+.sheet-bar.show{display:flex}
+.sbi{font-size:18px}.sbn{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--txt)}.sbr{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ok);margin-top:2px}
+.sbo{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--acc2);text-decoration:none;padding:3px 8px;border:1px solid rgba(71,180,255,.25);border-radius:2px}.sbo:hover{background:rgba(71,180,255,.1)}
+.panel{background:var(--surf);border:1px solid var(--bdr);border-radius:6px;padding:16px 18px;margin-bottom:14px;transition:border-color .2s}
+.panel.has-data{border-color:rgba(71,255,143,.3)}.panel.needs-data{border-color:rgba(232,255,71,.3)}
+.plabel{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--bdr);flex-shrink:0}.panel.has-data .dot{background:var(--ok)}.panel.needs-data .dot{background:var(--acc)}
+.dz{border:2px dashed var(--bdr);border-radius:4px;padding:20px 14px;text-align:center;cursor:pointer;position:relative;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .18s}
+.dz:hover,.dz.drag{border-color:var(--acc);background:rgba(232,255,71,.03)}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-ico{font-size:20px;margin-bottom:6px}.dz-txt{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);line-height:1.5}.dz-txt b{color:var(--acc);font-weight:400}
+.chips{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.chip{display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--surf2);border-radius:3px;border:1px solid var(--bdr);font-family:'IBM Plex Mono',monospace;font-size:10px}
+.chip .cn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chip .cd{color:var(--acc2)}.chip .cr{color:var(--muted)}.chip .cok{color:var(--ok)}
+.chip .cx{cursor:pointer;color:var(--muted);background:none;border:none;font-size:12px;padding:0 2px}.chip .cx:hover{color:var(--err)}
+.btn-run{width:100%;padding:15px;font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:2px;font-weight:700;border:none;border-radius:6px;cursor:pointer;text-transform:uppercase;background:var(--acc);color:#0d0f14;transition:all .15s}
+.btn-run:hover:not(:disabled){background:#f0ff60;transform:translateY(-1px)}.btn-run:disabled{background:var(--bdr);color:var(--muted);cursor:not-allowed}
+.btn-run.running{background:var(--surf2);color:var(--acc2);border:1px solid var(--acc2);cursor:not-allowed}
+.btn-write{width:100%;padding:14px;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:2px;font-weight:700;border:none;border-radius:6px;cursor:pointer;text-transform:uppercase;background:linear-gradient(135deg,#0f9d58,#34a853);color:#fff;margin-top:10px;transition:all .15s}
+.btn-write:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px)}.btn-write:disabled{background:var(--bdr);color:var(--muted);cursor:not-allowed}
+.prog{display:none;margin-bottom:14px}.prog-track{height:5px;background:var(--surf2);border-radius:3px;overflow:hidden;border:1px solid var(--bdr)}.prog-fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:3px;transition:width .35s;width:0}.prog-row{display:flex;justify-content:space-between;margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)}
+.wbox{display:none;background:rgba(255,179,71,.07);border:1px solid rgba(255,179,71,.35);border-radius:4px;padding:14px 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--warn);margin-bottom:14px;line-height:1.8}.wbox.show{display:block}.wbox strong{color:#ffc97a}
+.wbox-btns{display:flex;gap:8px;margin-top:10px}
+.bsm{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;padding:7px 14px;border:none;border-radius:3px;cursor:pointer;text-transform:uppercase;transition:all .12s}
+.bsm-y{background:rgba(255,179,71,.18);color:var(--warn);border:1px solid rgba(255,179,71,.4);font-weight:700}.bsm-n{background:transparent;color:var(--muted);border:1px solid var(--bdr)}
+.log{display:none;background:#080a0f;border:1px solid var(--bdr);border-radius:4px;padding:9px 13px;font-family:'IBM Plex Mono',monospace;font-size:11px;max-height:160px;overflow-y:auto;margin-bottom:14px}
+.ll{padding:1px 0;border-bottom:1px solid rgba(255,255,255,.025)}.ll.ok{color:var(--ok)}.ll.w{color:var(--warn)}.ll.e{color:var(--err)}.ll.i{color:var(--acc2)}.ll.d{color:var(--muted)}
+.result{display:none;background:var(--surf);border:1px solid rgba(71,255,143,.3);border-radius:6px;padding:18px 20px;margin-bottom:14px}.result.show{display:block}
+.res-title{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ok);letter-spacing:2px;margin-bottom:12px}
+.res-stats{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.rs{background:var(--surf2);border:1px solid var(--bdr);border-radius:3px;padding:9px 14px}
+.rs-v{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--acc);line-height:1}.rs-l{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+.btn-save{flex:1;min-width:140px;padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;font-weight:700;border:none;border-radius:4px;cursor:pointer;text-transform:uppercase;transition:all .15s}.btn-save:disabled{background:var(--bdr);color:var(--muted);cursor:not-allowed}
+.btn-gsheets{background:linear-gradient(135deg,#0f9d58,#34a853);color:#fff}.btn-gsheets:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px)}
+.save-note{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6}.save-note.ok{color:rgba(71,255,143,.8)}.save-note a{color:var(--acc2);text-decoration:none}
+.twrap{max-height:200px;overflow:auto;border:1px solid var(--bdr);border-radius:3px;margin-top:14px}
+table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:10px}
+th{background:var(--surf2);color:var(--acc);padding:5px 10px;text-align:center;border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:1;white-space:nowrap}
+td{padding:4px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,.03);white-space:nowrap}tr:hover td{background:rgba(232,255,71,.025)}
+.files-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}@media(max-width:620px){.files-grid{grid-template-columns:1fr}}
+.fslot{border:2px dashed var(--bdr);border-radius:4px;padding:16px 12px;text-align:center;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100px;transition:all .18s}
+.fslot:hover{border-color:var(--acc);background:rgba(232,255,71,.03)}.fslot.loaded{border-style:solid;border-color:var(--ok);background:rgba(71,255,143,.04)}
+.fslot input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.fslot-ico{font-size:22px;margin-bottom:6px}.fslot-name{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);line-height:1.4}.fslot-name b{color:var(--acc);font-weight:400}
+.fslot-file{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ok);margin-top:6px;word-break:break-all}
+.period-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.period-row label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.period-row input{background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);padding:8px 12px;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;width:160px}
+.rtable{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:11px;margin-bottom:14px}
+.rtable th{text-align:left;padding:8px 12px;background:var(--surf2);color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--bdr)}
+.rtable td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.03)}.rtable td:last-child{text-align:right;color:var(--acc);font-weight:500}
+.stag{display:inline-block;padding:2px 7px;border-radius:2px;font-size:9px;font-weight:600}
+.stag.s1{background:rgba(99,102,241,.15);color:#818cf8}.stag.s2{background:rgba(245,158,11,.15);color:#fbbf24}.stag.s3{background:rgba(236,72,153,.15);color:#f472b6}
+.btn-datalens{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;padding:6px 12px;border:none;border-radius:3px;cursor:pointer;text-transform:uppercase;font-weight:700;background:linear-gradient(135deg,#fc3f1d,#ff6b35);color:#fff;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;transition:all .15s}.btn-datalens:hover{filter:brightness(1.1)}
+footer{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--bdr);padding:20px 0;border-top:1px solid var(--bdr);margin-top:20px;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div><div class="logo">РОЗНИЦА</div><div class="sub">КАБИНЕТ ОБРАБОТКИ ДАННЫХ · v2.0</div></div>
+  <div class="hright"><div class="gpill" id="gstatus">ОЖИДАНИЕ</div></div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="zvonki" onclick="switchTab(this,'zvonki')">📞 Звонки 3CX</button>
+    <button class="tab-btn" data-tab="svodna" onclick="switchTab(this,'svodna')">📊 Сводная по счетам</button>
+  </div>
+</header>
+<div class="gbar" id="gbar">
+  <span class="gbar-ico">🔐</span>
+  <div class="gbar-info"><div class="gbar-title" id="gbar-title">Google Sheets</div><div class="gbar-sub" id="gbar-sub">Не подключён</div></div>
+  <button class="btn-gauth connect" id="btnGauth" onclick="handleGAuth()">ПОДКЛЮЧИТЬ</button>
+</div>
+
+<!-- ══ TAB 1: ЗВОНКИ ══ -->
+<div class="tab-content active" id="tab-zvonki">
+  <div class="sheet-bar" id="z-sheetBar"><span class="sbi">📊</span><div style="flex:1;min-width:120px"><div class="sbn" id="z-sbName">—</div><div class="sbr" id="z-sbRows">—</div></div><a class="btn-datalens" id="z-btnDL" href="#" target="_blank">📥 DATALENS</a><a class="sbo" id="z-sbOpen" href="#" target="_blank">Открыть ↗</a></div>
+  <div class="wbox" id="z-dupBox"><strong>⚠ ДУБЛИРУЮЩИЕСЯ ДАТЫ</strong><br><br><span id="z-dupInfo"></span><br>Дописать?<div class="wbox-btns"><button class="bsm bsm-y" onclick="zConfirmDup(true)">✓ ДА</button><button class="bsm bsm-n" onclick="zConfirmDup(false)">✕ НЕТ</button></div></div>
+  <div class="wbox" id="z-repeatBox"><strong>⚠ ДАННЫЕ УЖЕ ЗАПИСАНЫ!</strong><br><br>Повторная запись создаст дубли.<div class="wbox-btns"><button class="bsm bsm-y" onclick="zConfirmRepeat(true)">⚠ ДА</button><button class="bsm bsm-n" onclick="zConfirmRepeat(false)">✕ НЕТ</button></div></div>
+  <div class="log" id="z-log"></div>
+  <div class="prog" id="z-prog"><div class="prog-track"><div class="prog-fill" id="z-pFill"></div></div><div class="prog-row"><span id="z-pLbl"></span><span id="z-pPct"></span></div></div>
+  <div class="panel" id="z-csvPanel"><div class="plabel"><div class="dot"></div>CSV-файлы 3CX</div><div class="dz" id="z-dz"><input type="file" id="z-csvIn" accept=".csv" multiple><div class="dz-ico">📂</div><div class="dz-txt">Перетащите CSV или <b>нажмите</b></div></div><div class="chips" id="z-csvChips"></div></div>
+  <div style="margin-bottom:14px"><button class="btn-run" id="z-btnRun" disabled onclick="zRunAll()">▶ ОБРАБОТАТЬ И СОХРАНИТЬ</button></div>
+  <div class="result" id="z-result"><div class="res-title">✅ ДАННЫЕ ОБРАБОТАНЫ</div><div class="res-stats"><div class="rs"><div class="rs-v" id="z-rsProc">—</div><div class="rs-l">ИЗ CSV</div></div><div class="rs"><div class="rs-v" id="z-rsDel">—</div><div class="rs-l">УДАЛЕНО</div></div><div class="rs"><div class="rs-v" id="z-rsSent">—</div><div class="rs-l">В SHEETS</div></div></div><div><button class="btn-save btn-gsheets" id="z-btnSheets" onclick="zAppendToSheets()" disabled>☁ ДОПИСАТЬ В GOOGLE SHEETS</button></div><div class="save-note" id="z-saveNote"></div><div class="twrap" id="z-preview"></div></div>
+</div>
+
+<!-- ══ TAB 2: СВОДНАЯ ══ -->
+<div class="tab-content" id="tab-svodna">
+  <div class="sheet-bar" id="s-sheetBar"><span class="sbi">📊</span><div style="flex:1;min-width:120px"><div class="sbn" id="s-sbName">—</div><div class="sbr" id="s-sbRows">—</div></div><a class="sbo" id="s-sbOpen" href="#" target="_blank">Открыть ↗</a></div>
+  <div class="panel" id="s-filesPanel"><div class="plabel"><div class="dot"></div>Исходные файлы (Excel)</div><div class="files-grid"><label class="fslot" id="s-slotScheta"><input type="file" accept=".xls,.xlsx" onchange="sHandleFile(this,'scheta')"><div class="fslot-ico">📋</div><div class="fslot-name">Счета<br><b>РОЗНИЦА</b></div><div class="fslot-file" id="s-fnScheta"></div></label><label class="fslot" id="s-slotOplacheno"><input type="file" accept=".xls,.xlsx" onchange="sHandleFile(this,'oplacheno')"><div class="fslot-ico">💰</div><div class="fslot-name">Оплаченные<br><b>счета</b></div><div class="fslot-file" id="s-fnOplacheno"></div></label><label class="fslot" id="s-slotOtgruzki"><input type="file" accept=".xls,.xlsx" onchange="sHandleFile(this,'otgruzki')"><div class="fslot-ico">📦</div><div class="fslot-name">Количество<br><b>отгрузок</b></div><div class="fslot-file" id="s-fnOtgruzki"></div></label></div></div>
+  <div style="margin-bottom:14px"><button class="btn-run" id="s-btnCalc" disabled onclick="sCalculate()">▶ РАССЧИТАТЬ ПОКАЗАТЕЛИ</button></div>
+  <div class="result" id="s-resultPanel"><div class="res-title">✅ ПОКАЗАТЕЛИ РАССЧИТАНЫ</div><div class="period-row"><label>Период:</label><input type="text" id="s-inputPeriod" placeholder="ДД.ММ-ДД.ММ"></div><table class="rtable"><thead><tr><th>Показатель</th><th>Источник</th><th>Значение</th></tr></thead><tbody id="s-resBody"></tbody></table><button class="btn-write" id="s-btnWrite" disabled onclick="sWriteToSheets()">☁ ЗАПИСАТЬ В GOOGLE SHEETS</button><div class="save-note" id="s-saveNote"></div></div>
+  <div class="log" id="s-log"></div>
+</div>
+
+</div>
+<footer>РОЗНИЦА · КАБИНЕТ · v2.0</footer>
+<script>
+// ═══════════════════════════════════════════════════════
+// SHARED CONFIG + AUTH + UTILS
+// ═══════════════════════════════════════════════════════
+const CLIENT_ID='641126652272-k51st45nfh3jl8nl6edeotvusdrrins7.apps.googleusercontent.com';
+const SCOPES='https://www.googleapis.com/auth/spreadsheets';
+let gAccessToken='';
+
+const Z_SHEET_ID='1YMoBRW6EUSayHvCyHgy6yRoz2pKj6mRrWzSdasuS8co';
+const Z_SHEET_NAME='2026';
+const Z_RANGE=Z_SHEET_NAME+'!A:C';
+
+const S_SHEET_ID='1J_dVDnq3bIfOONHFZODRfSOU7x3SJFhfaARsIdYn9pk';
+const S_YEAR=String(new Date().getFullYear());
+
+function switchTab(btn,name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  history.replaceState(null,'',location.pathname+'#'+name);
+}
+
+function handleGAuth(){
+  if(gAccessToken){gAccessToken='';setGAuthUI(false);
+    document.getElementById('z-sheetBar').classList.remove('show');
+    document.getElementById('s-sheetBar').classList.remove('show');
+    zCheckReady();sCheckReady();return;}
+  const origin=location.href.split('#')[0].split('?')[0];
+  window.location.href='https://accounts.google.com/o/oauth2/v2/auth'
+    +'?client_id='+encodeURIComponent(CLIENT_ID)
+    +'&redirect_uri='+encodeURIComponent(origin)
+    +'&response_type=token&scope='+encodeURIComponent(SCOPES)+'&prompt=consent';
+}
+function handleOAuthCallback(){
+  const h=window.location.hash;
+  if(!h.includes('access_token'))return;
+  const p=new URLSearchParams(h.substring(1));
+  const t=p.get('access_token');
+  if(!t)return;
+  gAccessToken=t;
+  window.history.replaceState(null,'',window.location.pathname);
+  setGAuthUI(true);
+  zLoadSheetInfo();sLoadSheetInfo();
+}
+function setGAuthUI(on){
+  document.getElementById('gbar-title').textContent=on?'✓ Google Sheets подключён':'Google Sheets';
+  const s=document.getElementById('gbar-sub');
+  s.textContent=on?'Авторизован':'Не подключён';
+  s.className=on?'gbar-sub ok':'gbar-sub';
+  const b=document.getElementById('btnGauth');
+  b.textContent=on?'ОТКЛЮЧИТЬ':'ПОДКЛЮЧИТЬ';
+  b.className=on?'btn-gauth disconnect':'btn-gauth connect';
+  zCheckReady();sCheckReady();
+}
+function setStatus(t,c=''){
+  const el=document.getElementById('gstatus');
+  el.textContent=t;el.className='gpill'+(c?' '+c:'');
+}
+async function gFetch(url,opts={}){
+  const res=await fetch(url,{...opts,cache:'no-store',
+    headers:{...opts.headers,'Authorization':'Bearer '+gAccessToken,'Content-Type':'application/json'}});
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||('HTTP '+res.status));}
+  if(res.status===204)return{};
+  return res.json();
+}
+function colToLetter(n){let r='';while(n>=0){r=String.fromCharCode(65+(n%26))+r;n=Math.floor(n/26)-1;}return r;}
+function fmtNum(n,d=2){return n.toLocaleString('ru-RU',{minimumFractionDigits:d,maximumFractionDigits:d});}
+
+// ═══════════════════════════════════════════════════════
+// MODULE 1: ЗВОНКИ 3CX
+// ═══════════════════════════════════════════════════════
+let zCsvFiles=[],zProcessed=[],zDupConfirmed=false,zAlreadySaved=false,zExistingDates=new Set();
+
+const MMAP={
+  'Леонтьев, Александр Васильевич (133)':'Леонтьев А.В.',
+  'Лапушкина, Татьяна Ивановна (130)':'Аксёнов А.А.',
+  'Коньшин, Николай Петрович (134)':'Аксёнов А.А.',
+  'Сойникова, Светлана (135)':'Сойникова С.Н.',
+  'Аксёнов, Артём (136)':'Аксёнов А.А.',
+  'Бердибаева, Гульнара Турсунбековна (132)':'Бердибаева Г.Т.',
+  'Кожушко, Павел Дмитриевич (131)':'Аксёнов А.А.',
+};
+
+const zfd=d=>!d?'—':String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+const zft=t=>String(t.h).padStart(2,'0')+':'+String(t.m).padStart(2,'0')+':'+String(t.s).padStart(2,'0');
+const zdk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+
+function zL(m,c='d'){const el=document.getElementById('z-log');el.style.display='block';const d=document.createElement('div');d.className='ll '+c;d.textContent='['+new Date().toLocaleTimeString('ru-RU')+'] '+m;el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function zSetP(p,l){document.getElementById('z-prog').style.display='block';document.getElementById('z-pFill').style.width=p+'%';document.getElementById('z-pLbl').textContent=l;document.getElementById('z-pPct').textContent=p+'%';}
+
+function zCheckReady(){
+  const ok=zCsvFiles.length>0;
+  document.getElementById('z-btnRun').disabled=!ok;
+  document.getElementById('z-csvPanel').className='panel'+(ok?' has-data needs-data':'');
+  document.getElementById('z-btnSheets').disabled=!(gAccessToken&&zProcessed.length>0);
+}
+
+function zNormDate(s){
+  let m;
+  if((m=s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/)))return m[3]+'-'+m[2]+'-'+m[1];
+  if((m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/)))return s;
+  return s;
+}
+
+async function zLoadSheetInfo(){
+  if(!gAccessToken)return;
+  try{
+    zL('Читаю таблицу звонков...','i');
+    const meta=await gFetch('https://sheets.googleapis.com/v4/spreadsheets/'+Z_SHEET_ID+'?fields=properties.title,sheets.properties');
+    const title=meta.properties?.title||'Таблица';
+    const data=await gFetch('https://sheets.googleapis.com/v4/spreadsheets/'+Z_SHEET_ID+'/values/'+encodeURIComponent(Z_SHEET_NAME+'!A1:C9999'));
+    const rows=data.values||[];
+    const dataRows=Math.max(0,rows.length-1);
+    zExistingDates=new Set();
+    for(let i=1;i<rows.length;i++){const c=(rows[i][0]||'').trim();if(c)zExistingDates.add(zNormDate(c));}
+    document.getElementById('z-sbName').textContent=title+' · лист "'+Z_SHEET_NAME+'"';
+    document.getElementById('z-sbRows').textContent='Строк данных: '+dataRows;
+    document.getElementById('z-sheetBar').classList.add('show');
+    document.getElementById('z-sbOpen').href='https://docs.google.com/spreadsheets/d/'+Z_SHEET_ID+'/edit';
+    document.getElementById('z-btnDL').href='https://docs.google.com/spreadsheets/d/'+Z_SHEET_ID+'/export?format=xlsx';
+    zL('Таблица: '+dataRows+' строк, '+zExistingDates.size+' дат','ok');
+    zCheckReady();
+  }catch(e){zL('Ошибка: '+e.message,'e');}
+}
+
+// CSV handling
+const zDz=document.getElementById('z-dz');
+zDz.addEventListener('dragover',e=>{e.preventDefault();zDz.classList.add('drag');});
+zDz.addEventListener('dragleave',()=>zDz.classList.remove('drag'));
+zDz.addEventListener('drop',e=>{e.preventDefault();zDz.classList.remove('drag');zHandleCSV(Array.from(e.dataTransfer.files).filter(f=>f.name.toLowerCase().endsWith('.csv')));});
+document.getElementById('z-csvIn').addEventListener('change',e=>{zHandleCSV(Array.from(e.target.files));e.target.value='';});
+
+function zDateFromFn(n){const m=n.match(/_(\d{2})(\d{2})_/);if(!m)return null;return new Date(new Date().getFullYear(),parseInt(m[2])-1,parseInt(m[1])-1);}
+
+function zHandleCSV(files){
+  files.forEach(f=>{
+    if(zCsvFiles.find(x=>x.name===f.name))return;
+    const r=new FileReader();
+    r.onload=e=>{
+      zCsvFiles.push({name:f.name,date:zDateFromFn(f.name),rows:zParseCSV(e.target.result.replace(/^\uFEFF/,''))});
+      zAlreadySaved=false;zRenderChips();zCheckReady();
+    };
+    r.readAsText(f,'utf-8');
+  });
+}
+
+function zParseCSV(txt){
+  return txt.split(/\r?\n/).filter(l=>l.trim()).map(line=>{
+    const row=[];let cell='',q=false;
+    for(let j=0;j<line.length;j++){const c=line[j];if(c==='"'){if(q&&line[j+1]==='"'){cell+='"';j++;}else q=!q;}else if(c===','&&!q){row.push(cell);cell='';}else cell+=c;}
+    row.push(cell);return row;
+  });
+}
+
+function zRenderChips(){
+  const el=document.getElementById('z-csvChips');el.innerHTML='';
+  zCsvFiles.forEach((f,i)=>{
+    const n=Math.max(0,f.rows.length-1);
+    const d=document.createElement('div');d.className='chip';
+    d.innerHTML='<span class="cok">✓</span><span class="cn" title="'+f.name+'">'+f.name+'</span>'
+      +'<span class="cd">'+(f.date?zfd(f.date):'?')+'</span><span class="cr">'+n+' стр.</span>'
+      +'<button class="cx" onclick="zRemCSV('+i+')">✕</button>';
+    el.appendChild(d);
+  });
+}
+
+function zRemCSV(i){zCsvFiles.splice(i,1);zRenderChips();zCheckReady();}
+
+function zParseDt(s){const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);return m?new Date(+m[1],+m[2]-1,+m[3]):null;}
+function zIsZero(s){return !s||s.trim()==='00:00:00'||s.trim()==='0:00:00';}
+function zParseTm(s){if(!s)return{h:0,m:0,s:0};const p=s.split(':').map(Number);return{h:p[0]||0,m:p[1]||0,s:p[2]||0};}
+function zResetBtn(){const b=document.getElementById('z-btnRun');b.disabled=!zCsvFiles.length;b.classList.remove('running');b.textContent='▶ ОБРАБОТАТЬ И СОХРАНИТЬ';}
+
+async function zRunAll(){
+  document.getElementById('z-dupBox').classList.remove('show');
+  document.getElementById('z-log').innerHTML='';document.getElementById('z-log').style.display='none';
+  document.getElementById('z-result').classList.remove('show');
+  document.getElementById('z-prog').style.display='none';
+  zDupConfirmed=false;zProcessed=[];
+  const btn=document.getElementById('z-btnRun');
+  btn.disabled=true;btn.classList.add('running');btn.textContent='⏳ ОБРАБАТЫВАЮ...';
+  setStatus('ОБРАБОТКА...','run');
+  zSetP(5,'Читаю CSV...');
+  zL('Файлов CSV: '+zCsvFiles.length,'i');
+
+  let allRows=[],totIn=0,deleted=0;
+  for(let fi=0;fi<zCsvFiles.length;fi++){
+    const f=zCsvFiles[fi];
+    zSetP(5+(fi/zCsvFiles.length)*60,'CSV: '+f.name);
+    zL('→ '+f.name,'i');
+    if(f.rows.length<2){zL('  Пуст','w');continue;}
+    let cnt=0;
+    for(let i=1;i<f.rows.length;i++){
+      const r=f.rows[i];if(!r||r.length<8)continue;
+      const fc=(r[0]||'').trim();
+      if(fc==='Call Time'||fc==='Totals'||fc==='')continue;
+      totIn++;
+      const rawM=(r[3]||'').trim();
+      if(/voicemail\s*box/i.test(rawM)){deleted++;continue;}
+      const dateV=zParseDt(fc);const mgr=MMAP[rawM]||rawM;
+      const ring=(r[6]||'').trim(),talk=(r[7]||'').trim();
+      const tZ=zIsZero(talk),rZ=zIsZero(ring);
+      if(tZ&&rZ){deleted++;continue;}
+      allRows.push({date:dateV,manager:mgr,time:zParseTm(tZ?ring:talk)});cnt++;
+    }
+    zL('  Строк: '+cnt,'ok');
+  }
+
+  zSetP(70,'Сортировка...');
+  allRows.sort((a,b)=>{if(a.date<b.date)return -1;if(a.date>b.date)return 1;return a.manager.localeCompare(b.manager,'ru');});
+  zProcessed=allRows;
+  zL('Итого: '+zProcessed.length+' (удалено: '+deleted+')','ok');
+
+  // Проверка дублей
+  if(gAccessToken&&zExistingDates.size>0){
+    zSetP(80,'Проверка дублей...');
+    const newDates=new Set(zProcessed.map(r=>zdk(r.date)));
+    const dupDates=new Set([...newDates].filter(d=>zExistingDates.has(d)));
+    const freshDates=[...newDates].filter(d=>!zExistingDates.has(d));
+    if(dupDates.size>0){
+      if(freshDates.length>0){
+        const dupList=[...dupDates].map(d=>{const[y,m,dd]=d.split('-');return dd+'.'+m+'.'+y;}).join(', ');
+        zL('Дубли пропущены: '+dupList,'w');
+        zProcessed=zProcessed.filter(r=>!dupDates.has(zdk(r.date)));
+        zL('Будет записано (без дублей): '+zProcessed.length,'ok');
+      }else if(!zDupConfirmed){
+        const list=[...dupDates].map(d=>{const[y,m,dd]=d.split('-');return dd+'.'+m+'.'+y;}).join(', ');
+        document.getElementById('z-dupInfo').innerHTML='Все даты уже есть: <strong>'+list+'</strong>';
+        document.getElementById('z-dupBox').classList.add('show');
+        zL('Все даты дублируются: '+list,'w');
+        setStatus('ДУБЛИ','warn');zResetBtn();zShowResult(deleted);return;
+      }
+    }
+  }
+
+  zSetP(100,'Готово!');zShowResult(deleted);setStatus('ГОТОВО','ok');zResetBtn();
+}
+
+function zConfirmDup(y){document.getElementById('z-dupBox').classList.remove('show');if(!y){zL('Отменено.','w');return;}zDupConfirmed=true;zAppendToSheets();}
+function zConfirmRepeat(y){document.getElementById('z-repeatBox').classList.remove('show');if(!y){zL('Отменено.','w');return;}zAlreadySaved=false;zDupConfirmed=true;zAppendToSheets();}
+
+function zShowResult(del){
+  document.getElementById('z-rsProc').textContent=zProcessed.length;
+  document.getElementById('z-rsDel').textContent=del;
+  document.getElementById('z-rsSent').textContent='—';
+  document.getElementById('z-saveNote').textContent=gAccessToken?'Нажмите «Дописать в Google Sheets».':'Подключитесь к Google для записи.';
+  zCheckReady();zRenderPreview();
+  document.getElementById('z-result').classList.add('show');
+}
+
+function zRenderPreview(){
+  let h='<table><thead><tr><th>Дата</th><th>Менеджер</th><th>Время</th></tr></thead><tbody>';
+  zProcessed.slice(0,50).forEach(r=>{h+='<tr><td>'+zfd(r.date)+'</td><td>'+r.manager+'</td><td>'+zft(r.time)+'</td></tr>';});
+  if(zProcessed.length>50)h+='<tr><td colspan="3" style="color:var(--muted)">...ещё '+(zProcessed.length-50)+' строк</td></tr>';
+  h+='</tbody></table>';
+  document.getElementById('z-preview').innerHTML=h;
+}
+
+async function zAppendToSheets(){
+  if(!gAccessToken||!zProcessed.length)return;
+  if(zAlreadySaved){document.getElementById('z-repeatBox').classList.add('show');return;}
+  document.getElementById('z-repeatBox').classList.remove('show');
+  document.getElementById('z-dupBox').classList.remove('show');
+  document.getElementById('z-btnSheets').disabled=true;
+  document.getElementById('z-btnSheets').textContent='⏳ ЗАПИСЫВАЮ...';
+  zL('Запись в Google Sheets...','i');zSetP(10,'Подготовка...');
+
+  const values=zProcessed.map(r=>[zfd(r.date),r.manager,zft(r.time)]);
+  try{
+    zSetP(20,'Читаю таблицу...');
+    const before=await gFetch('https://sheets.googleapis.com/v4/spreadsheets/'+Z_SHEET_ID+'/values/'+encodeURIComponent(Z_SHEET_NAME+'!A1:C9999'));
+    const rowsBefore=(before.values||[]).length;
+    zL('Строк до: '+rowsBefore,'i');
+
+    zSetP(40,'Отправка...');
+    await gFetch('https://sheets.googleapis.com/v4/spreadsheets/'+Z_SHEET_ID+'/values/'+encodeURIComponent(Z_RANGE)+':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
+      {method:'POST',body:JSON.stringify({values,majorDimension:'ROWS'})});
+    zL('Записано: '+values.length,'ok');
+
+    zSetP(55,'Проверка...');
+    const after=await gFetch('https://sheets.googleapis.com/v4/spreadsheets/'+Z_SHEET_ID+'/values/'+encodeURIComponent(Z_SHEET_NAME+'!A1:C9999'));
+    const rowsAfter=(after.values||[]).length;
+    zL('Строк после: '+rowsAfter+' (+'+(rowsAfter-rowsBefore)+')','ok');
+
+    zSetP(60,'Форматирование...');
+    const sm=await gFetch('https://sheets.googleapis.com/v4/spreadsheets/'+Z_SHEET_ID+'?fields=sheets.properties');
+    const sheetId=sm.sheets?.find(s=>s.properties.title===Z_SHEET_NAME)?.properties?.sheetId??0;
+    const first=rowsBefore,last=rowsAfter;
+    const BLACK={red:0,green:0,blue:0,alpha:1};
+    const tb={style:'SOLID',color:BLACK};
+    const ab={top:tb,bottom:tb,left:tb,right:tb};
+    const mkR=(c1,c2)=>({sheetId,startRowIndex:first,endRowIndex:last,startColumnIndex:c1,endColumnIndex:c2});
+    const requests=[
+      {repeatCell:{range:mkR(0,1),cell:{userEnteredFormat:{numberFormat:{type:'DATE',pattern:'DD.MM.YYYY'},horizontalAlignment:'CENTER',verticalAlignment:'MIDDLE',textFormat:{fontFamily:'Arial',fontSize:10},borders:ab}},fields:'userEnteredFormat(numberFormat,horizontalAlignment,verticalAlignment,textFormat,borders)'}},
+      {repeatCell:{range:mkR(1,2),cell:{userEnteredFormat:{numberFormat:{type:'TEXT'},horizontalAlignment:'CENTER',verticalAlignment:'MIDDLE',textFormat:{fontFamily:'Arial',fontSize:10},borders:ab}},fields:'userEnteredFormat(numberFormat,horizontalAlignment,verticalAlignment,textFormat,borders)'}},
+      {repeatCell:{range:mkR(2,3),cell:{userEnteredFormat:{numberFormat:{type:'TIME',pattern:'HH:MM:SS'},horizontalAlignment:'CENTER',verticalAlignment:'MIDDLE',textFormat:{fontFamily:'Arial',fontSize:10},borders:ab}},fields:'userEnteredFormat(numberFormat,horizontalAlignment,verticalAlignment,textFormat,borders)'}}
+    ];
+    await gFetch('https://sheets.googleapis.com/v4/spreadsheets/'+Z_SHEET_ID+':batchUpdate',
+      {method:'POST',body:JSON.stringify({requests})});
+    zL('Форматирование ✓','ok');
+
+    zSetP(100,'Готово!');
+    document.getElementById('z-rsSent').textContent=values.length;
+    document.getElementById('z-btnSheets').textContent='✓ ЗАПИСАНО';
+    document.getElementById('z-btnSheets').disabled=true;
+    zAlreadySaved=true;
+    document.getElementById('z-saveNote').className='save-note ok';
+    document.getElementById('z-saveNote').innerHTML='✅ Записано. <a href="https://docs.google.com/spreadsheets/d/'+Z_SHEET_ID+'/edit" target="_blank">Открыть ↗</a>';
+    setStatus('ЗАПИСАНО ✓','ok');
+    zLoadSheetInfo();
+  }catch(e){
+    zL('❌ '+e.message,'e');setStatus('ОШИБКА','warn');
+    document.getElementById('z-btnSheets').disabled=false;
+    document.getElementById('z-btnSheets').textContent='☁ ДОПИСАТЬ В GOOGLE SHEETS';
+    zAlreadySaved=false;
+    if(e.message.includes('401')||e.message.includes('403'))zL('⚠ Токен истёк — переподключитесь','w');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// MODULE 2: СВОДНАЯ ПО СЧЕТАМ
+// Таблица: строки = недели, столбцы A:I фиксированные
+// A=Номер недели, B=Дата начала (пн), C=Вход.почта,
+// D=Выставлено счетов, E=Оплачено счетов,
+// F=Сумма выставленных, G=Сумма оплаченных,
+// H=Средний чек, I=Кол-во позиций по отгрузке
+// ═══════════════════════════════════════════════════════
+const NDS_RATE=0.22,NDS_COEFF=1.22,NERESIDENT='нерезидент';
+let sFiles={scheta:null,oplacheno:null,otgruzki:null};
+let sParsed={scheta:null,oplacheno:null,otgruzki:null};
+let sResults=null,sAlreadySaved=false;
+let sSheetRows=[];  // [{rowIndex, weekNum, mondayDate, mondayStr}]
+let sTargetRow=null; // найденная строка для записи
+
+function sL(m,c='d'){const el=document.getElementById('s-log');el.style.display='block';const d=document.createElement('div');d.className='ll '+c;d.textContent='['+new Date().toLocaleTimeString('ru-RU')+'] '+m;el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function sCap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+// Парсинг даты "DD.MM.YYYY" → Date
+function sParseDate(s){
+  if(!s)return null;
+  const m=String(s).trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if(!m)return null;
+  return new Date(+m[3],+m[2]-1,+m[1]);
+}
+
+// Найти строку в таблице по периоду: ищем строку, где дата понедельника (столбец B) попадает в диапазон файлов
+function sFindTargetRow(periodStr){
+  // Период из имени файла: "DD.MM-DD.MM" (без года — добавляем текущий)
+  const m=periodStr.match(/^(\d{2})\.(\d{2})-(\d{2})\.(\d{2})$/);
+  if(!m){sL('Неверный формат периода: '+periodStr+'. Нужен ДД.ММ-ДД.ММ','e');return null;}
+  const year=new Date().getFullYear();
+  const startDate=new Date(year,+m[2]-1,+m[1]); // начало периода (пятница)
+  const endDate=new Date(year,+m[4]-1,+m[3]);    // конец периода (четверг)
+  
+  sL('Период: '+startDate.toLocaleDateString('ru-RU')+' — '+endDate.toLocaleDateString('ru-RU'),'i');
+  
+  // Ищем строку, где понедельник (столбец B) попадает в [startDate, endDate]
+  for(const row of sSheetRows){
+    if(row.mondayDate>=startDate && row.mondayDate<=endDate){
+      sL('Найдена строка '+row.rowIndex+': неделя '+row.weekNum+' (пн '+row.mondayStr+')','ok');
+      return row;
+    }
+  }
+  sL('Не найдена строка с понедельником в диапазоне '+periodStr,'e');
+  return null;
+}
+
+function sCheckReady(){
+  const a=sParsed.scheta&&sParsed.oplacheno&&sParsed.otgruzki;
+  document.getElementById('s-btnCalc').disabled=!a;
+  document.getElementById('s-filesPanel').className='panel'+(a?' has-data':'');
+  const periodOk=document.getElementById('s-inputPeriod').value.trim().match(/^\d{2}\.\d{2}-\d{2}\.\d{2}$/);
+  document.getElementById('s-btnWrite').disabled=!(gAccessToken&&sResults&&periodOk&&sSheetRows.length>0&&!sAlreadySaved);
+}
+document.getElementById('s-inputPeriod').addEventListener('input',sCheckReady);
+
+async function sLoadSheetInfo(){
+  if(!gAccessToken)return;
+  try{
+    sL('Читаю сводную...','i');
+    const meta=await gFetch('https://sheets.googleapis.com/v4/spreadsheets/'+S_SHEET_ID+'?fields=properties.title,sheets.properties');
+    const title=meta.properties?.title||'';
+    const sheet=meta.sheets?.find(s=>s.properties.title===S_YEAR);
+    if(!sheet){sL('Лист «'+S_YEAR+'» не найден','w');return;}
+    
+    // Читаем столбцы A и B (все строки) чтобы знать структуру недель
+    const data=await gFetch('https://sheets.googleapis.com/v4/spreadsheets/'+S_SHEET_ID+'/values/'+encodeURIComponent(S_YEAR+'!A:B')+'?valueRenderOption=FORMATTED_VALUE');
+    const rows=data.values||[];
+    
+    sSheetRows=[];
+    let filledWeeks=0;
+    for(let i=1;i<rows.length;i++){ // пропускаем заголовок (строка 1)
+      const weekNum=(rows[i][0]||'').toString().trim();
+      const dateStr=(rows[i][1]||'').toString().trim();
+      if(!weekNum||!dateStr)continue;
+      const mondayDate=sParseDate(dateStr);
+      if(!mondayDate)continue;
+      sSheetRows.push({rowIndex:i+1, weekNum, mondayDate, mondayStr:dateStr});
+    }
+    
+    // Посчитаем заполненные недели (прочитаем столбец D)
+    const dCol=await gFetch('https://sheets.googleapis.com/v4/spreadsheets/'+S_SHEET_ID+'/values/'+encodeURIComponent(S_YEAR+'!D:D')+'?valueRenderOption=FORMATTED_VALUE');
+    const dVals=dCol.values||[];
+    for(let i=1;i<dVals.length;i++){
+      if(dVals[i]&&dVals[i][0]&&dVals[i][0].toString().trim())filledWeeks++;
+    }
+
+    document.getElementById('s-sbName').textContent=title+' · «'+S_YEAR+'»';
+    document.getElementById('s-sbRows').textContent='Недель: '+sSheetRows.length+' · заполнено: '+filledWeeks;
+    document.getElementById('s-sheetBar').classList.add('show');
+    document.getElementById('s-sbOpen').href='https://docs.google.com/spreadsheets/d/'+S_SHEET_ID+'/edit';
+    sL(title+' — '+sSheetRows.length+' недель, заполнено: '+filledWeeks,'ok');
+    sCheckReady();
+  }catch(e){sL('Ошибка: '+e.message,'e');}
+}
+
+function sHandleFile(input,key){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      sFiles[key]=file;sParsed[key]=wb;
+      document.getElementById('s-slot'+sCap(key)).classList.add('loaded');
+      document.getElementById('s-fn'+sCap(key)).textContent=file.name;
+      sL('Загружен: '+file.name,'ok');
+      const m=file.name.match(/(\d{2})[._](\d{2})\s*[-\u2013]\s*(\d{2})[._](\d{2})/);
+      if(m){const p=m[1]+'.'+m[2]+'-'+m[3]+'.'+m[4];const inp=document.getElementById('s-inputPeriod');if(!inp.value)inp.value=p;}
+      sCheckReady();
+    }catch(err){sL('Ошибка: '+err.message,'e');}
+  };reader.readAsArrayBuffer(file);
+}
+
+function isNer(n){return n&&String(n).toLowerCase().includes(NERESIDENT);}
+
+function sParseScheta(wb){
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:null});
+  let cnt=0,sum=0,nerSum=0;
+  for(let i=1;i<rows.length;i++){const r=rows[i];if(!r[0]||!r[1])continue;const a=parseFloat(r[2]);if(isNaN(a))continue;cnt++;sum+=a;if(isNer(r[3]))nerSum+=a;}
+  return{cnt,sumNoNds:sum/NDS_COEFF+nerSum*NDS_RATE,_d:{sum,nerSum}};
+}
+
+function sParseOpl(wb){
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:null});
+  let cnt=0,total=0,nerSum=0,cur='',started=false;
+  for(const r of rows){
+    if(r[0]&&typeof r[0]==='string'){
+      if(r[0].trim().toLowerCase()==='итого'){const v=parseFloat(r[6]);if(!isNaN(v))total=v;break;}
+      if(typeof r[6]==='number'||(typeof r[6]==='string'&&!isNaN(parseFloat(r[6])))){
+        cur=r[0];started=true;const a=typeof r[6]==='number'?r[6]:parseFloat(r[6]);
+        if(isNer(cur)&&!isNaN(a))nerSum+=a;
+      }
+    }
+    if(started&&r[3]&&typeof r[3]==='string'&&r[3].trim().startsWith('Заказ клиента'))cnt++;
+  }
+  return{cnt,sumNoNds:total/NDS_COEFF+nerSum*NDS_RATE,_d:{total,nerSum}};
+}
+
+function sParseOtgr(wb){
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:null});
+  let sh=null,po=null,rev=null;
+  for(const r of rows){
+    if(r[0]&&typeof r[0]==='string'&&r[0].trim().toLowerCase()==='итого'){const v=parseFloat(r[6]);if(!isNaN(v))rev=v;}
+    if(r[2]&&typeof r[2]==='string'){
+      const lb=r[2].trim().toLowerCase();
+      if(sh===null&&(lb.includes('кол-во отгрузок')||lb.includes('количество отгрузок'))){const v=parseInt(r[3]);if(!isNaN(v))sh=v;}
+      else if(po===null&&(lb.includes('кол-во позиций')||lb.includes('количество позиций'))){const v=parseInt(r[3]);if(!isNaN(v))po=v;}
+    }
+  }
+  if(!sh||!po||rev===null)throw new Error('Метаданные не найдены в файле отгрузок');
+  return{coeff:po/sh,avgShip:rev/sh,_d:{sh,po,rev}};
+}
+
+function sCalculate(){
+  document.getElementById('s-log').innerHTML='';document.getElementById('s-log').style.display='none';
+  try{
+    sL('Расчёт...','i');
+    const s=sParseScheta(sParsed.scheta),o=sParseOpl(sParsed.oplacheno),t=sParseOtgr(sParsed.otgruzki);
+    sResults={invoicesCnt:s.cnt,invoicesSum:s.sumNoNds,paidCnt:o.cnt,paidSum:o.sumNoNds,coeff:t.coeff,avgShip:t.avgShip};
+    sL('[Счета] Σ='+fmtNum(s._d.sum)+' нерез='+fmtNum(s._d.nerSum)+' безНДС='+fmtNum(s.sumNoNds),'d');
+    sL('[Опл.] Итого='+fmtNum(o._d.total)+' нерез='+fmtNum(o._d.nerSum)+' безНДС='+fmtNum(o.sumNoNds),'d');
+    sL('[Отгр.] Отгр='+t._d.sh+' Поз='+t._d.po+' Выр='+fmtNum(t._d.rev),'d');
+    // Таблица результатов: столбцы D–I
+    const data=[
+      {l:'D: Выставлено счетов',src:'Счета',c:'s1',v:s.cnt},
+      {l:'E: Оплачено счетов',src:'Оплата',c:'s2',v:o.cnt},
+      {l:'F: Сумма выставленных (без НДС)',src:'Счета',c:'s1',v:fmtNum(s.sumNoNds)},
+      {l:'G: Сумма оплаченных (без НДС)',src:'Оплата',c:'s2',v:fmtNum(o.sumNoNds)},
+      {l:'H: Средний чек',src:'Отгрузки',c:'s3',v:fmtNum(t.avgShip)},
+      {l:'I: Кол-во позиций по отгрузке',src:'Отгрузки',c:'s3',v:t.coeff.toFixed(3)},
+    ];
+    document.getElementById('s-resBody').innerHTML=data.map(d=>'<tr><td>'+d.l+'</td><td><span class="stag '+d.c+'">'+d.src+'</span></td><td>'+d.v+'</td></tr>').join('');
+    document.getElementById('s-resultPanel').classList.add('show');
+    sAlreadySaved=false;sL('Расчёт ✓','ok');setStatus('РАССЧИТАНО','ok');sCheckReady();
+  }catch(e){sL('Ошибка: '+e.message,'e');setStatus('ОШИБКА','warn');}
+}
+
+async function sWriteToSheets(){
+  if(!gAccessToken||!sResults)return;
+  const period=document.getElementById('s-inputPeriod').value.trim();
+  if(!period){sL('Укажите период','w');return;}
+  
+  const btn=document.getElementById('s-btnWrite');
+  btn.disabled=true;btn.textContent='⏳ ЗАПИСЫВАЮ...';setStatus('ЗАПИСЬ...','run');
+  
+  try{
+    const BASE='https://sheets.googleapis.com/v4/spreadsheets/'+S_SHEET_ID;
+    
+    // 1. Найти строку по периоду
+    sL('Ищу строку для периода '+period+'...','i');
+    // Перечитаем данные на случай если таблица обновлялась
+    const freshData=await gFetch(BASE+'/values/'+encodeURIComponent(S_YEAR+'!A:B')+'?valueRenderOption=FORMATTED_VALUE');
+    const freshRows=freshData.values||[];
+    sSheetRows=[];
+    for(let i=1;i<freshRows.length;i++){
+      const wn=(freshRows[i][0]||'').toString().trim();
+      const ds=(freshRows[i][1]||'').toString().trim();
+      if(!wn||!ds)continue;
+      const md=sParseDate(ds);
+      if(md)sSheetRows.push({rowIndex:i+1,weekNum:wn,mondayDate:md,mondayStr:ds});
+    }
+    
+    const target=sFindTargetRow(period);
+    if(!target){
+      btn.textContent='☁ ЗАПИСАТЬ В GOOGLE SHEETS';btn.disabled=false;
+      setStatus('ОШИБКА','warn');return;
+    }
+    
+    const rowNum=target.rowIndex; // 1-based номер строки в Google Sheets
+    sL('Запись в строку '+rowNum+' (неделя '+target.weekNum+', пн '+target.mondayStr+')','i');
+    
+    // 2. Записать данные в D:I этой строки (только значения, без форматирования)
+    // D=invoicesCnt, E=paidCnt, F=invoicesSum, G=paidSum, H=avgShip, I=coeff
+    const vals=[[
+      sResults.invoicesCnt,            // D: целое число
+      sResults.paidCnt,                // E: целое число
+      Math.round(sResults.invoicesSum*100)/100,  // F: 2 знака
+      Math.round(sResults.paidSum*100)/100,      // G: 2 знака
+      Math.round(sResults.avgShip*100)/100,      // H: 2 знака
+      Math.round(sResults.coeff*1000)/1000,      // I: 3 знака
+    ]];
+    
+    const rng=S_YEAR+'!D'+rowNum+':I'+rowNum;
+    sL('Диапазон: '+rng,'i');
+    
+    await gFetch(BASE+'/values/'+encodeURIComponent(rng)+'?valueInputOption=RAW',{
+      method:'PUT',
+      body:JSON.stringify({range:rng,majorDimension:'ROWS',values:vals})
+    });
+    
+    sL('Данные записаны ✓','ok');
+    sAlreadySaved=true;
+    btn.textContent='✓ ЗАПИСАНО';
+    document.getElementById('s-saveNote').className='save-note ok';
+    document.getElementById('s-saveNote').innerHTML='✅ Период «'+period+'» → строка '+rowNum+' ('+target.weekNum+') <a href="https://docs.google.com/spreadsheets/d/'+S_SHEET_ID+'/edit" target="_blank">Открыть ↗</a>';
+    setStatus('ЗАПИСАНО ✓','ok');
+    sLoadSheetInfo();
+  }catch(e){
+    sL('❌ '+e.message,'e');setStatus('ОШИБКА','warn');
+    btn.textContent='☁ ЗАПИСАТЬ В GOOGLE SHEETS';btn.disabled=false;sAlreadySaved=false;
+    if(e.message.includes('401')||e.message.includes('403'))sL('⚠ Токен истёк — переподключитесь','w');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+handleOAuthCallback();
+if(gAccessToken){setGAuthUI(true);zLoadSheetInfo();sLoadSheetInfo();}
+zCheckReady();sCheckReady();
+const _ih=location.hash.replace('#','');
+if(_ih==='svodna'){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-svodna').classList.add('active');
+  document.querySelector('[data-tab="svodna"]').classList.add('active');
+}
+
+</script>
+</body>
+</html>
